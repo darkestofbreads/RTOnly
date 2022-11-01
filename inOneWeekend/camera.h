@@ -61,45 +61,22 @@ inline float clamp(float x, float min, float max) {
     if (x > max) return max;
     return x;
 }
-void write_color(std::ostream& out, color pixel_color, int samples_per_pixel) {
+
+//spooky function name with even spookier code, happy halloween
+void write_color_to_int(color pixel_color, float scale, std::vector<int> &out) {
     auto r = pixel_color.x();
     auto g = pixel_color.y();
     auto b = pixel_color.z();
 
     // Divide the color by the number of samples.
-    auto scale = 1.0 / samples_per_pixel;
     r = sqrt(scale * r);
     g = sqrt(scale * g);
     b = sqrt(scale * b);
 
     // Write the translated [0,255] value of each color component.
-   out << static_cast<int>(256 * clamp(r, 0.0, 0.999)) << ' '
-        << static_cast<int>(256 * clamp(g, 0.0, 0.999)) << ' '
-        << static_cast<int>(256 * clamp(b, 0.0, 0.999)) << '\n';
-}
-
-std::string write_color_to_string(color pixel_color, int samples_per_pixel) {
-    auto r = pixel_color.x();
-    auto g = pixel_color.y();
-    auto b = pixel_color.z();
-
-    std::string out;
-
-    // Divide the color by the number of samples.
-    auto scale = 1.0 / samples_per_pixel;
-    r = sqrt(scale * r);
-    g = sqrt(scale * g);
-    b = sqrt(scale * b);
-
-    // Write the translated [0,255] value of each color component.
-    out = std::to_string(static_cast<int>(256 * clamp(r, 0.0, 0.999)));
-    out.push_back(' ');
-    out += std::to_string(static_cast<int>(256 * clamp(g, 0.0, 0.999)));
-    out.push_back(' ');
-    out += std::to_string(static_cast<int>(256 * clamp(b, 0.0, 0.999)));
-    out.push_back('\n');
-
-    return out;
+    out.push_back(static_cast<int>(256 * clamp(r, 0.0, 0.999)));
+    out.push_back(static_cast<int>(256 * clamp(g, 0.0, 0.999)));
+    out.push_back(static_cast<int>(256 * clamp(b, 0.0, 0.999)));
 }
 
 #endif // !CAMERA_H

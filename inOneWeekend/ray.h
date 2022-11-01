@@ -2,6 +2,7 @@
 #define RAY_H
 
 //RAAAAAAYS FOR RAAAAAAYTRACING WHO WOULD HAVE THOUGHT OF THAT?!
+//cones for raytracing tho, thatd be... something
 
 #include "vec3.h"
 

@@ -1,5 +1,4 @@
 #include <iostream>
-#include <fstream>
 #include <future>
 #include <string>
 
@@ -12,29 +11,29 @@
 #include "material.h"
 
 //TODO: 
-//		- bounding boxes would be neat as im looking to add actual 3D-models and not just primitives relatively soon (iirc thats done in the next book "raytracing the next week")
+//		- bounding boxes would be neat as im looking to add actual 3D-models and not just primitives relatively soon (scratchapixel has the code for a functional raytracer with a mesh)
+//			- this will probably come in late
 // 
 //		- light sources:
-//			- point light sources which should be pretty straight forward -> send ray to light source and check if it hits anything else in the way
-//			- directional light sources (here comes the sun): 
-//				1. cast ray directly into the center of the sun (which is always facing the same direction regardless of origin)
-//				2. if the ray doesnt hit the sun yet (because it hits something else), cast another ray in some kind of cone facing the sun (meaning i'm going to need a random_in_unit_cone vec3 function)
-//			- emissive objects shouldnt be too hard to do too, right?
+//			- point light sources which should be pretty straight forward
+//			- directional light sources (here comes the sun)
+//			- emissive objects, which are covered first due to it being covered in the book and will be useful for the above types of light sources
+//				- rays are being biased towards the emissive objects
 // 
 //		- textures, normal maps, roughness and metallic maps and so on
 // 
-//		- as stated in the book: volumetrics (fog), how do i do that?? (this should also automatically include stuff like light shafts? i think?)
-//			- make the ray hit a random point in the volumetric and then spread secondary rays in random directions? this will fuck over performance by a good chunk
+//		- as stated in the book: volumetrics (fog), which is apparently covered in "raytracing the rest of your life"
 //
-//		- would be good to have this open source too
+//		- clean up headers if possible
 
-//there currently is a problem with triangles where they reflect when they shouldnt
+//there currently is a problem with triangles where they reflect when they shouldnt. Adding lighting and therefore changing the way rays are scattered might fix this issue
+//alternatively rectangles, which are covered next, should have the same issue and therefore there should be a fix for exactly that problem somewhere in its chapter
 
 color rayColor(const ray& r, const hittable& world, int depth);
 
 //yes i'm aware of how awful this looks atm
-void startRender(int imageWidth, float aspectRatio, int samples, int bounces, hittable_list& world, int processorCount, camera& cam);
-std::string render(int imageWidth, int imageHeight_steps, int imageHeight, int j, int samples, int bounces, const hittable_list& world, const camera& cam);
+void startRender(const int imageWidth, float aspectRatio, const int samples, const int bounces, hittable_list& world, const int processorCount, camera& cam);
+std::vector<int> render(int imageWidth, int imageHeight_steps, int imageHeight, int j, int samples, int bounces, const hittable_list& world, const camera& cam);
 
 int WinMain() {
 	
@@ -85,10 +84,10 @@ int WinMain() {
 
 	//		spheres:					(x, y, z), radius, material
 	//		triangles:			 point3 a, point3 b, point3 c, material
-	world.add(make_shared<sphere>(point3(0.0, 0.0, -1.0), 0.7, material_center));
+	world.add(make_shared<sphere>(point3(0.0, 0.0, -1.0), 0.7, material_right1));
 	world.add(make_shared<sphere>(point3(-1.0, 0.0, -1.0), 0.4, material_left));
 	world.add(make_shared<sphere>(point3(-1.0, 0.0, -1.0), -0.4, material_left));
-	world.add(make_shared<sphere>(point3(1.0, 0.0, -1.0), 0.5, material_right1));
+	world.add(make_shared<sphere>(point3(1.0, 0.0, -1.0), 0.5, material_center));
 	world.add(make_shared<sphere>(point3(6, 3, -4), 1, material_left));
 	world.add(make_shared<sphere>(point3(-2, 0, -2), 0.5, dielectric0));
 	world.add(make_shared<sphere>(point3(-1, 0, -1.5), -0.35, dielectric1));
@@ -98,27 +97,7 @@ int WinMain() {
 	world.add(make_shared<triangle>(point3(2, -2, -4), point3(3, -1, 0), point3(2.5, 3, -3), make_shared<lambertian>(checker)));
 	//world.add(make_shared<triangle>(point3(-3, -1, 0), point3(2, -2, -4), point3(2.5, 3, -3), material_center));
 
-	//Create imagefile object and open file (.ppm files can be opened using Gimp)
-	std::ofstream imageFile;
-	imageFile.open("image.ppm");
-	//imageFile.open("image.txt");
-
-	//Output stream to object file
-	std::cout.rdbuf(imageFile.rdbuf());
-
-
-	//Render:
-
-	//Head for .ppm file
-	std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
-
 	startRender(image_width, aspect_ratio, samples_per_pixel, bounces, world, processor_count, cam);
-
-	//Broadcast that image is finished
-	std::cerr << "\nImage is done Rendering.\n";
-
-	//Close image file object
-	imageFile.close();
 
 	return 0;
 }
@@ -145,24 +124,40 @@ color rayColor(const ray& r, const hittable& world, int bounces) {
 }
 
 //this part below is actually fully written by me and not entirely copy-pasted
-void startRender(int imageWidth, float aspectRatio, int samples, int bounces, hittable_list& world, int processorCount, camera& cam) {
-	std::vector<std::future<std::string>> ftr;
+void startRender(const int imageWidth, float aspectRatio, const int samples, const int bounces, hittable_list& world, const int processorCount, camera& cam) {
+	std::vector<std::future<std::vector<int>>> ftr;
+	std::vector<std::vector<int>> imageData;
 
 	auto imageHeight = static_cast<int>(imageWidth / aspectRatio);
 	auto heightPixelSteps = static_cast<int>(imageHeight / processorCount);
+
+	//i should probably change this or the vectors to be more consistent with each other
+	uint8_t* image = new uint8_t[imageWidth * imageHeight * 3];
 
 	//to pass something by reference here, std::ref or std::cref (for constant stuff, hence the c) needs to be used
 	for (int pos = processorCount-1; pos >= 0; pos--)
 		//ridiculous amount of parameters but oh well
 		ftr.push_back(std::async(render, imageWidth, heightPixelSteps, imageHeight, pos + 1, samples, bounces, std::cref(world), std::cref(cam)));
 
-	//send pixeldata to output stream in order
+	//future of vector of int to vector of int
 	for (auto& oc : ftr)
-		std::cout << oc.get();
+		imageData.push_back(oc.get());
+
+	//send pixeldata to output stream in order
+	int index = 0;
+	for (int j = 0; j < imageData.size(); j++)
+		for(int i = 0; i < imageData[j].size(); i++)
+			//this warning is a bit annoying
+			image[index++] = imageData[j][i];
+
+	//create .png file									 3 Channels: R, G and B, a fourth one would add the Alpha channel which is useless in this case
+	stbi_write_png("image.png", imageWidth, imageHeight, 3, image, imageWidth*3);
 }
 
-std::string render(int imageWidth, int imageHeight_steps, int imageHeight, int j, int samples, int bounces, const hittable_list& world, const camera& cam) {
-	std::string image;
+std::vector<int> render(int imageWidth, int imageHeight_steps, int imageHeight, int j, int samples, int bounces, const hittable_list& world, const camera& cam) {
+	std::vector<int> image;
+	auto scale = 1.0 / samples;
+
 	int new_height = imageHeight_steps * j;
 	int prev_height = imageHeight_steps * (j - 1);
 	//do the render magic
@@ -177,7 +172,7 @@ std::string render(int imageWidth, int imageHeight_steps, int imageHeight, int j
 			}
 
 			//allocate pixels to output string
-			image += write_color_to_string(pixelColor, samples);
+			write_color_to_int(pixelColor, scale, image);
 		}
 	}
 	return image;
