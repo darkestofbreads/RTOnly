@@ -37,52 +37,6 @@ public:
 	shared_ptr<texture> albedo;
 };
 
-//this should only work on triangles
-class surface : public material {
-public:
-	surface(const texture_ppm& texture) : txtr(texture) {}
-
-	virtual bool scatter(
-		const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
-	) const override {
-		auto scatter_direction = rec.normal + random_unit_vector();
-
-		if (scatter_direction.near_zero())
-			scatter_direction = rec.normal;
-
-		scattered = ray(rec.p, scatter_direction);
-		attenuation = get_value_at(txtr, rec.p.x(), rec.p.y());
-		return true;
-	}
-
-public:
-	texture_ppm txtr;
-};
-
-/*class barycentric_test : public material {
-public:
-	barycentric_test(point3 a, point3 b, point3 c) : vertex0(a), vertex1(b), vertex2(c) {}
-
-	virtual bool scatter(
-		const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
-	) const override {
-		color colors[3] = { color(1,0,0), color(0,1,0), color(0,0,1) };
-		auto scatter_direction = rec.normal + random_unit_vector();
-		auto bary_coords = barycentric_coordinates(rec.p, vertex0, vertex1, vertex2);
-
-		if (scatter_direction.near_zero())
-			scatter_direction = rec.normal;
-
-		scattered = ray(rec.p, scatter_direction);
-		attenuation = bary_coords.x() * colors[0] + bary_coords.y() * colors[1] + (1 - bary_coords.x() - bary_coords.y()) * colors[2];
-		return true;
-	}
-public:
-	point3 vertex0;
-	point3 vertex1;
-	point3 vertex2;
-};*/
-
 class metal : public material {
 public:
 	metal(const color& a, float f) : albedo(a), fuzz(f < 1 ? f : 1) {}

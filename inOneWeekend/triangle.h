@@ -19,6 +19,7 @@ public:
 	vec3 edge0 = vertex1 - vertex0;
 	vec3 edge1 = vertex2 - vertex0;
 	shared_ptr<material> mat_ptr;
+	vec3 outward_normal = cross(edge0, edge1);
 
 private:
 	static void get_triangle_uv(point3& p, point3 a, vec3 edge0, vec3 edge1, float& u, float& v) {
@@ -38,7 +39,6 @@ bool triangle::hit(const ray& r, float t_min, float t_max, hit_record& rec) cons
 	if (a > -t_min && a < t_min)
 		return false; //Ray is parallel to triangle
 
-	vec3 outward_normal = cross(edge0, edge1);
 	if (dot(r.dir, outward_normal) > 0) 
 		return false; //Ray intersects with backside of triangle
 
@@ -57,10 +57,12 @@ bool triangle::hit(const ray& r, float t_min, float t_max, hit_record& rec) cons
 	if (t < t_min || t_max < t)
 		return false; //Another primitive is in front of the triangle
 
+	auto at = r.at(t);
+
 	rec.t = t;
-	rec.p = r.at(t);
+	rec.p = at;
 	rec.set_face_normal(r, outward_normal);
-	get_triangle_uv(outward_normal, vertex0, edge0, edge1, rec.u, rec.v);
+	get_triangle_uv(at, vertex0, edge0, edge1, rec.u, rec.v);
 	rec.mat_ptr = mat_ptr;
 
 	return true;

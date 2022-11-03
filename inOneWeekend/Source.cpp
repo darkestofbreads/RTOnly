@@ -20,9 +20,9 @@
 //			- emissive objects, which are covered first due to it being covered in the book and will be useful for the above types of light sources
 //				- rays are being biased towards the emissive objects
 // 
-//		- textures, normal maps, roughness and metallic maps and so on
+//		- normal maps, roughness and metallic maps and so on
 // 
-//		- as stated in the book: volumetrics (fog), which is apparently covered in "raytracing the rest of your life"
+//		- as stated in the book: volumetrics (fog), which is apparently covered in "raytracing the next week"
 //
 //		- clean up headers if possible
 
@@ -80,11 +80,14 @@ int WinMain() {
 	auto dielectric1 = make_shared<dielectric>(3);
 	auto checker = make_shared<checker_texture>(color(0.2, 0.3, 0.1), color(0.9, 0.9, 0.9));
 
+	auto some_texture = make_shared<image_texture>("earthmap.jpg");
+	auto some_surface = make_shared<lambertian>(some_texture);
+
 	//CAUTION: Adding hittables currently increases render time by a lot! (remove when bounding boxes are implemented)
 
 	//		spheres:					(x, y, z), radius, material
 	//		triangles:			 point3 a, point3 b, point3 c, material
-	world.add(make_shared<sphere>(point3(0.0, 0.0, -1.0), 0.7, material_right1));
+	world.add(make_shared<sphere>(point3(0.0, 0.0, -1.0), 1, some_surface));
 	world.add(make_shared<sphere>(point3(-1.0, 0.0, -1.0), 0.4, material_left));
 	world.add(make_shared<sphere>(point3(-1.0, 0.0, -1.0), -0.4, material_left));
 	world.add(make_shared<sphere>(point3(1.0, 0.0, -1.0), 0.5, material_center));
@@ -94,7 +97,7 @@ int WinMain() {
 	world.add(make_shared<sphere>(point3(-1, 0, -1.5), 0.3, dielectric1));
 	world.add(make_shared<sphere>(point3(0, -100.5, -1), 100, make_shared<lambertian>(checker)));
 	world.add(make_shared<triangle>(point3(1, 0, -4), point3(2, 0, -6), point3(3, 3, -7), material_center));
-	world.add(make_shared<triangle>(point3(2, -2, -4), point3(3, -1, 0), point3(2.5, 3, -3), make_shared<lambertian>(checker)));
+	world.add(make_shared<triangle>(point3(2, -2, -4), point3(3, -1, 0), point3(2.5, 3, -3), some_surface));
 	//world.add(make_shared<triangle>(point3(-3, -1, 0), point3(2, -2, -4), point3(2.5, 3, -3), material_center));
 
 	startRender(image_width, aspect_ratio, samples_per_pixel, bounces, world, processor_count, cam);
@@ -132,6 +135,7 @@ void startRender(const int imageWidth, float aspectRatio, const int samples, con
 	auto heightPixelSteps = static_cast<int>(imageHeight / processorCount);
 
 	//i should probably change this or the vectors to be more consistent with each other
+	//actually i should probably bother with it when i get to memory management
 	uint8_t* image = new uint8_t[imageWidth * imageHeight * 3];
 
 	//to pass something by reference here, std::ref or std::cref (for constant stuff, hence the c) needs to be used
@@ -150,7 +154,7 @@ void startRender(const int imageWidth, float aspectRatio, const int samples, con
 			//this warning is a bit annoying
 			image[index++] = imageData[j][i];
 
-	//create .png file									 3 Channels: R, G and B, a fourth one would add the Alpha channel which is useless in this case
+	//create .png file									 3 Channels: R, G and B, a fourth one would add the Alpha channel which is useless here
 	stbi_write_png("image.png", imageWidth, imageHeight, 3, image, imageWidth*3);
 }
 
