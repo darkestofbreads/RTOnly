@@ -9,6 +9,7 @@
 #include "triangle.h"
 #include "camera.h"
 #include "material.h"
+#include "rects.h"
 
 //TODO: 
 //		- bounding boxes would be neat as im looking to add actual 3D-models and not just primitives relatively soon (scratchapixel has the code for a functional raytracer with a mesh)
@@ -87,17 +88,17 @@ int WinMain() {
 
 	//		spheres:					(x, y, z), radius, material
 	//		triangles:			 point3 a, point3 b, point3 c, material
-	world.add(make_shared<sphere>(point3(0.0, 0.0, -1.0), 1, some_surface));
+	//world.add(make_shared<sphere>(point3(0.0, 0.0, -1.0), 1, some_surface));
 	world.add(make_shared<sphere>(point3(-1.0, 0.0, -1.0), 0.4, material_left));
-	world.add(make_shared<sphere>(point3(-1.0, 0.0, -1.0), -0.4, material_left));
+	//world.add(make_shared<sphere>(point3(-1.0, 0.0, -1.0), -0.4, material_left));
 	world.add(make_shared<sphere>(point3(1.0, 0.0, -1.0), 0.5, material_center));
-	world.add(make_shared<sphere>(point3(6, 3, -4), 1, material_left));
+	//world.add(make_shared<sphere>(point3(6, 3, -4), 1, material_left));
 	world.add(make_shared<sphere>(point3(-2, 0, -2), 0.5, dielectric0));
 	world.add(make_shared<sphere>(point3(-1, 0, -1.5), -0.35, dielectric1));
 	world.add(make_shared<sphere>(point3(-1, 0, -1.5), 0.3, dielectric1));
 	world.add(make_shared<sphere>(point3(0, -100.5, -1), 100, make_shared<lambertian>(checker)));
-	world.add(make_shared<triangle>(point3(1, 0, -4), point3(2, 0, -6), point3(3, 3, -7), material_center));
-	world.add(make_shared<triangle>(point3(2, -2, -4), point3(3, -1, 0), point3(2.5, 3, -3), some_surface));
+	//world.add(make_shared<triangle>(point3(1, 0, -4), point3(2, 0, -6), point3(3, 3, -7), material_center));
+	//world.add(make_shared<triangle>(point3(2, -2, -4), point3(3, -1, 0), point3(2.5, 3, -3), some_surface));
 	//world.add(make_shared<triangle>(point3(-3, -1, 0), point3(2, -2, -4), point3(2.5, 3, -3), material_center));
 
 	startRender(image_width, aspect_ratio, samples_per_pixel, bounces, world, processor_count, cam);
