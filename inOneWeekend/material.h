@@ -23,7 +23,7 @@ public:
 	virtual bool scatter(
 		const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
 	) const override {
-		auto scatter_direction = rec.normal + random_unit_vector();
+		auto scatter_direction = random_in_hemisphere(rec.normal);
 
 		if (scatter_direction.near_zero())
 			scatter_direction = rec.normal;

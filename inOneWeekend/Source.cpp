@@ -10,6 +10,7 @@
 #include "camera.h"
 #include "material.h"
 #include "rects.h"
+#include "box.h"
 
 //TODO: 
 //		- bounding boxes would be neat as im looking to add actual 3D-models and not just primitives relatively soon (scratchapixel has the code for a functional raytracer with a mesh)
@@ -18,17 +19,17 @@
 //		- light sources:
 //			- point light sources which should be pretty straight forward
 //			- directional light sources (here comes the sun)
-//			- emissive objects, which are covered first due to it being covered in the book and will be useful for the above types of light sources
-//				- rays are being biased towards the emissive objects
+//			- emissive objects, which are covered first due to it being covered in the book (basically just another material)
 // 
-//		- normal maps, roughness and metallic maps and so on
+//		- normal maps, roughness and metallic maps and so on (a good opportunity to assure blender "compatibility")
 // 
 //		- as stated in the book: volumetrics (fog), which is apparently covered in "raytracing the next week"
+//			-it seems like thats also a material for already existing objects, possibly compare with how other game engines do it
 //
 //		- clean up headers if possible
 
-//there currently is a problem with triangles where they reflect when they shouldnt. Adding lighting and therefore changing the way rays are scattered might fix this issue
-//alternatively rectangles, which are covered next, should have the same issue and therefore there should be a fix for exactly that problem somewhere in its chapter
+// textures will only fully work on spheres, they wont work at all on boxes and on triangles only when
+// boxes arent present (tldr: boxes make kaput pictures)
 
 color rayColor(const ray& r, const hittable& world, int depth);
 
@@ -53,7 +54,7 @@ int WinMain() {
 
 	// Camera
 	point3 lookfrom(0, 0, 3);
-	point3 lookat(0, 0, -1);
+	point3 lookat(3, 0, -1);
 	vec3 vup(0, 1, 0);
 
 	auto dist_to_focus = (lookfrom - lookat).length();
@@ -88,18 +89,20 @@ int WinMain() {
 
 	//		spheres:					(x, y, z), radius, material
 	//		triangles:			 point3 a, point3 b, point3 c, material
-	//world.add(make_shared<sphere>(point3(0.0, 0.0, -1.0), 1, some_surface));
+	world.add(make_shared<sphere>(point3(0.0, 0.0, -1.0), 0.6, some_surface));
 	world.add(make_shared<sphere>(point3(-1.0, 0.0, -1.0), 0.4, material_left));
 	//world.add(make_shared<sphere>(point3(-1.0, 0.0, -1.0), -0.4, material_left));
 	world.add(make_shared<sphere>(point3(1.0, 0.0, -1.0), 0.5, material_center));
-	//world.add(make_shared<sphere>(point3(6, 3, -4), 1, material_left));
 	world.add(make_shared<sphere>(point3(-2, 0, -2), 0.5, dielectric0));
 	world.add(make_shared<sphere>(point3(-1, 0, -1.5), -0.35, dielectric1));
 	world.add(make_shared<sphere>(point3(-1, 0, -1.5), 0.3, dielectric1));
+	world.add(make_shared<sphere>(point3(3, 1, -2), 0.8, material_center));
 	world.add(make_shared<sphere>(point3(0, -100.5, -1), 100, make_shared<lambertian>(checker)));
-	//world.add(make_shared<triangle>(point3(1, 0, -4), point3(2, 0, -6), point3(3, 3, -7), material_center));
-	//world.add(make_shared<triangle>(point3(2, -2, -4), point3(3, -1, 0), point3(2.5, 3, -3), some_surface));
-	//world.add(make_shared<triangle>(point3(-3, -1, 0), point3(2, -2, -4), point3(2.5, 3, -3), material_center));
+	//world.add(make_shared<box>(point3(130, 0, 65), point3(295, 165, 230), material_center));
+	//world.add(make_shared<box>(point3(3, -1, -2), point3(4, 3, 2), material_ground));
+	world.add(make_shared<triangle>(point3(1, 0, -4), point3(2, 0, -6), point3(3, 3, -7), material_center));
+	world.add(make_shared<triangle>(point3(2, -2, -4), point3(3, -1, 0), point3(2.5, 3, -3), some_surface));
+	world.add(make_shared<triangle>(point3(-3, -1, 0), point3(2, -2, -4), point3(2.5, 3, -3), material_center));
 
 	startRender(image_width, aspect_ratio, samples_per_pixel, bounces, world, processor_count, cam);
 
