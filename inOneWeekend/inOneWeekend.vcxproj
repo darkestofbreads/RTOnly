@@ -155,8 +155,8 @@
     <ClInclude Include="stb_image_write.h" />
     <ClInclude Include="texture.h" />
     <ClInclude Include="triangle.h" />
-    <ClInclude Include="vec3.h" />
     <ClInclude Include="rects.h" />
+    <ClInclude Include="vec3.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
