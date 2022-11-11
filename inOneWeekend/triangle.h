@@ -20,15 +20,6 @@ public:
 	vec3 edge1 = vertex2 - vertex0;
 	shared_ptr<material> mat_ptr;
 	vec3 outward_normal = cross(edge0, edge1);
-
-private:
-	/*static void get_triangle_uv(point3& p, point3 a, vec3 edge0, vec3 edge1, float& u, float& v) {
-		vec3 v2(p - a);
-		auto d = 1 / (edge0.x() * edge1.y() - edge1.x() * edge0.y());
-		auto w = (edge0.x() * v2.y() - v2.x() * edge0.y()) * d;
-		v = (v2.x() * edge1.y() - edge1.x() * v2.y()) * d;
-		u = 1.0f - v - w;
-	}*/
 };
 
 //implementation of Möller-Trumbore intersection algorithm
@@ -64,7 +55,6 @@ bool triangle::hit(const ray& r, float t_min, float t_max, hit_record& rec) cons
 	rec.u = u;
 	rec.v = v;
 	rec.set_face_normal(r, outward_normal);
-	//get_triangle_uv(at, vertex0, edge0, edge1, rec.u, rec.v);
 	rec.mat_ptr = mat_ptr;
 
 	return true;

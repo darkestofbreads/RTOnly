@@ -21,7 +21,7 @@ public:
 	}
 
 
-public: //not private for some reason, might find out why later | UPDATE: still havent found out
+public:
 	point3 orig;
 	vec3 dir;
 };
