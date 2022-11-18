@@ -21,11 +21,23 @@ public:
 
 class diffuse_light : public material {
 public:
-	diffuse_light(shared_ptr<texture> a) : emit(a) {}
-	diffuse_light(const color& c) : emit(make_shared<solid_color>(c)) {}
+	diffuse_light(shared_ptr<texture> a) : emit(a), _map(make_shared<solid_color>(1)) {}
+	diffuse_light(const color& c) : emit(make_shared<solid_color>(c)), _map(make_shared<solid_color>(1)) {}
+	diffuse_light(shared_ptr<texture> a, shared_ptr<texture> map) : emit(a), _map(map) {}
+	diffuse_light(const color& c, shared_ptr<texture> map) : emit(make_shared<solid_color>(c)), _map(map) {}
 
 	virtual bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
 		const override {
+		if (_map->value(rec.u, rec.v, rec.p) == color(0, 0, 0)) {
+			auto scatter_direction = random_in_hemisphere(rec.normal);
+
+			if (scatter_direction.near_zero())
+				scatter_direction = rec.normal;
+
+			scattered = ray(rec.p, scatter_direction);
+			attenuation = emit->value(rec.u, rec.v, rec.p);
+			return true;
+		}
 		return false;
 	}
 
@@ -34,6 +46,7 @@ public:
 	}
 public:
 	shared_ptr<texture> emit;
+	shared_ptr<texture> _map;
 };
 
 class lambertian : public material {
@@ -60,21 +73,23 @@ public:
 
 class metal : public material {
 public:
-	metal(const color& a, float f) : albedo(make_shared<solid_color>(a)), fuzz(f < 1 ? f : 1) {}
-	metal(shared_ptr<texture> a, float f) : albedo(a), fuzz(f < 1 ? f : 1) {}
+	metal(const color& a, float f) : albedo(make_shared<solid_color>(a)), fuzz(make_shared<solid_color>(f < 1 ? f : 1)) {}
+	metal(shared_ptr<texture> a, float f) : albedo(a), fuzz(make_shared<solid_color>(f < 1 ? f : 1)) {}
+	metal(shared_ptr<texture> a, shared_ptr<texture> f) : albedo(a), fuzz(f) {}
+	metal(const color& a, shared_ptr<texture> f) : albedo(make_shared<solid_color>(a)), fuzz(f) {}
 
 	virtual bool scatter(
 		const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
 	) const override {
 		vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
-		scattered = ray(rec.p, reflected + fuzz * random_in_unit_sphere() );
+		scattered = ray(rec.p, reflected + fuzz->value(rec.u, rec.v, rec.normal).x() * random_in_unit_sphere());
 		attenuation = albedo->value(rec.u, rec.v, rec.p);
 		return (dot(scattered.direction(), rec.normal) > 0);
 	}
 
 public:
+	shared_ptr<texture> fuzz;
 	shared_ptr<texture> albedo;
-	float fuzz;
 };
 
 //Tip for hollow glass spheres: in a sphere add another sphere with a negative radius

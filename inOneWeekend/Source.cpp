@@ -41,7 +41,7 @@ int WinMain() {
 	const int image_height = static_cast<int>(image_width / aspect_ratio);
 	
 	// Image quality
-	const int samples_per_pixel = 500;
+	const int samples_per_pixel = 50;
 	const int bounces = 20;
 	const bool doDepthOfField = true;
 	const color background(0.01, 0.01, 0.01);
@@ -80,37 +80,44 @@ int WinMain() {
 	auto green = make_shared<lambertian>(color(.12, .45, .15));
 	auto blue = make_shared<lambertian>(color(.12, .15, .55));
 	auto light = make_shared<diffuse_light>(color(15, 15, 15));
+	auto red_light = make_shared<diffuse_light>(color(.65, .05, .05));
 
 	auto some_texture = make_shared<image_texture>("textures/earthmap.jpg");
 	auto crappy_bricks = make_shared<image_texture>("textures/crappy_bricks.png");
-	auto sand = make_shared<image_texture>("texture/randomly-design-beach-sand.jpg");
+	auto cyan = make_shared<image_texture>(" ");
+	auto sand_texture = make_shared<image_texture>("textures/sand.png");
 
-	auto sand_light = make_shared<diffuse_light>(sand);
+	auto crappy_roughness = make_shared<greyscale>("textures/crappy_roughness.png");
+
+	auto cyan_light = make_shared<diffuse_light>(cyan);
 	auto crappy_light = make_shared<diffuse_light>(crappy_bricks);
 	auto some_surface = make_shared<lambertian>(some_texture);
 	auto some_surface_light = make_shared<diffuse_light>(some_texture);
+	auto sand = make_shared<lambertian>(sand_texture);
+	auto redstone_lamp = make_shared<diffuse_light>(make_shared<image_texture>("textures/redstone_lamp.png"), make_shared<greyscale>("textures/redstone_emission.png"));
 
 		//CAUTION: Adding hittables currently increases render time by a lot! (remove when bounding boxes are implemented)
 	//		boxes:				point3 start, point3 end, material
+	//							point3 origin, vec3 a, vec3 b, vec3 height, material
 	//		triangles:			point3 a, point3 b, point3 c, material
 	//		quads:				point3 pos, vec3 v, vec3 u, material
 	//		spheres:			point3 pos, radius, material
 
-	world.add(make_shared<box>(point3(295, 165, 230), point3(130, 0, 65), white));
-	world.add(make_shared<box>(point3(430, 330, 460), point3(265, 0, 295), white));
+	world.add(make_shared<box>(point3(70, 165, 230), point3(230, 0, 65), redstone_lamp));
+	world.add(make_shared<box>(point3(265, 0, 295), vec3(165, 0, -100), vec3(50, 40, 165), vec3(10, 330, 0), sand));
 
-	world.add(make_shared<triangle>(point3(2, -2, -4), point3(3, -1, 0), point3(2.5, 3, -3), some_surface));
+	//world.add(make_shared<triangle>(point3(2, -2, -4), point3(3, -1, 0), point3(2.5, 3, -3), some_surface));
 	//world.add(make_shared<triangle>(point3(500, 1000, 500), point3(1000, 500, 500), point3(500, 500, 1000), crappy_light));
-	world.add(make_shared<triangle>(point3(-3, -1, 0), point3(2, -2, -4), point3(2.5, 3, -3), some_surface_light));
-	world.add(make_shared<triangle>(point3(1, 0, -4), point3(2, 0, -6), point3(3, 3, -7), material_center));
+	//world.add(make_shared<triangle>(point3(-3, -1, 0), point3(2, -2, -4), point3(2.5, 3, -3), some_surface_light));
+	//world.add(make_shared<triangle>(point3(1, 0, -4), point3(2, 0, -6), point3(3, 3, -7), material_center));
 
-	world.add(make_shared<quad>(point3(0, 0, 555), vec3(0, 555, 0), vec3(555,0,0), sand_light));
-	world.add(make_shared<quad>(point3(0, 0, 555), vec3(0, 555, 0), vec3(0, 0, -555), make_shared<metal>(crappy_bricks, 0.5)));
+	world.add(make_shared<quad>(point3(0, 0, 555), vec3(0, 555, 0), vec3(555,0,0), cyan_light));
+	world.add(make_shared<quad>(point3(0, 0, 555), vec3(0, 555, 0), vec3(0, 0, -555), make_shared<metal>(crappy_bricks, crappy_roughness)));
 	world.add(make_shared<quad>(point3(0, 0, 555), vec3(555, 0, 0), vec3(0, 0, -555), red));
 	world.add(make_shared<quad>(point3(0, 555, 555), vec3(555, 0, 0), vec3(0, 0, -555), green));
 	world.add(make_shared<quad>(point3(555, 0, 555), vec3(0, 555, 0), vec3(0, 0, -555), blue));
 
-	world.add(make_shared<sphere>(point3(250, 200, 250), 75, material_right0));
+	//world.add(make_shared<sphere>(point3(275, 400, 250), 75, material_right0));
 	
 	// Depth of field: get camera ray at the center of the image, if it hits anything compute the distance and set DoF
 	//world.hit returns false for some reason, something is off with the math below

@@ -15,6 +15,7 @@ class solid_color :public texture {
 public:
 	solid_color(){}
 	solid_color(color c) : color_value(c){}
+	solid_color(float f) : color_value(color(f, f, f)){}
 
 	solid_color(float red, float green, float blue) : solid_color(color(red, green, blue)) {}
 
@@ -84,6 +85,55 @@ public:
 		auto pixel = data + j * bytes_per_scanline + i * bytes_per_pixel;
 
 		return color(color_scale * pixel[0], color_scale * pixel[1], color_scale * pixel[2]);
+	}
+
+public:
+	unsigned char* data;
+	int width;
+	int height;
+	int bytes_per_scanline;
+};
+
+class greyscale : public texture {
+public:
+	const static int bytes_per_pixel = 1;
+
+	greyscale() : data(nullptr), width(0), height(0), bytes_per_scanline(0) {}
+
+	greyscale(const char* filename) {
+		auto components_per_pixel = bytes_per_pixel;
+
+		data = stbi_load(filename, &width, &height, &components_per_pixel, components_per_pixel);
+
+		if (!data) {
+			std::cerr << "Could not load image file " << filename << "'.\n";
+			width = height = 0;
+		}
+
+		bytes_per_scanline = width;
+	}
+
+	~greyscale() {
+		delete data;
+	}
+
+	virtual color value(float u, float v, const vec3& p) const override {
+		if (data == nullptr) return color(0, 1, 1);
+
+		//clamp input texture coordinated to [0,1] x [1,0]
+		u = clamp(u, 0.0, 1.0);
+		v = 1.0 - clamp(v, 0.0, 1.0); //flip v to image coordinates
+
+		auto i = static_cast<int>(u * width);
+		auto j = static_cast<int>(v * height);
+
+		if (i >= width) i = width - 1;
+		if (j >= height) j = height - 1;
+
+		const auto color_scale = 1.0 / 255.0;
+		auto pixel = data + j * bytes_per_scanline + i;
+
+		return color(color_scale * pixel[0], color_scale * pixel[0], color_scale * pixel[0]);
 	}
 
 public:
