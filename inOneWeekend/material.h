@@ -14,39 +14,42 @@ public:
 		const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
 	) const = 0;
 
-	virtual color emitted(float u, float v, const point3& p) const {
-		return color(0, 0, 0);
+	virtual bool emitted(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered, color& emit) const {
+		return false;
 	}
 };
 
 class diffuse_light : public material {
 public:
-	diffuse_light(shared_ptr<texture> a) : emit(a), _map(make_shared<solid_color>(1)) {}
-	diffuse_light(const color& c) : emit(make_shared<solid_color>(c)), _map(make_shared<solid_color>(1)) {}
-	diffuse_light(shared_ptr<texture> a, shared_ptr<texture> map) : emit(a), _map(map) {}
-	diffuse_light(const color& c, shared_ptr<texture> map) : emit(make_shared<solid_color>(c)), _map(map) {}
+	diffuse_light(shared_ptr<texture> a) : albedo(a), emit_map(make_shared<solid_color>(1)) {}
+	diffuse_light(const color& c) : albedo(make_shared<solid_color>(c)), emit_map(make_shared<solid_color>(1)) {}
+	diffuse_light(shared_ptr<texture> a, shared_ptr<texture> f) : albedo(a), emit_map(f) {}
+	diffuse_light(const color& a, shared_ptr<texture> f) : albedo(make_shared<solid_color>(a)), emit_map(f) {}
 
-	virtual bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
-		const override {
-		if (_map->value(rec.u, rec.v, rec.p) == color(0, 0, 0)) {
-			auto scatter_direction = random_in_hemisphere(rec.normal);
+	virtual bool scatter(
+		const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
+	) const override {
+		auto scatter_direction = random_in_hemisphere(rec.normal);
 
-			if (scatter_direction.near_zero())
-				scatter_direction = rec.normal;
+		if (scatter_direction.near_zero())
+			scatter_direction = rec.normal;
 
-			scattered = ray(rec.p, scatter_direction);
-			attenuation = emit->value(rec.u, rec.v, rec.p);
+		scattered = ray(rec.p, scatter_direction);
+		attenuation = albedo->value(rec.u, rec.v, rec.p);
+		return true;
+	}
+
+	virtual bool emitted(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered, color& emit) const override {
+		if (emit_map->value(rec.u, rec.v, rec.normal).x() == 1) {
+			emit = albedo->value(rec.u, rec.v, rec.p);
 			return true;
 		}
+		emit = color(0, 0, 0);
 		return false;
 	}
-
-	virtual color emitted(float u, float v, const point3& p) const override {
-		return emit->value(u, v, p);
-	}
 public:
-	shared_ptr<texture> emit;
-	shared_ptr<texture> _map;
+	shared_ptr<texture> albedo;
+	shared_ptr<texture> emit_map;
 };
 
 class lambertian : public material {

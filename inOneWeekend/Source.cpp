@@ -26,8 +26,6 @@
 // 
 //		- as stated in the book: volumetrics (fog), which is apparently covered in "raytracing the next week"
 
-//boxes do not work, i should redo those anyway so i can rotate them with a given angle which should be easier to do than with rect-boxes
-
 color rayColor(const ray& r, const color& background, const hittable& world, int depth);
 
 void startRender(const int imageWidth, float aspectRatio, const color& background, const int samples, const int bounces, hittable_list& world, const int processorCount, camera& cam);
@@ -88,13 +86,14 @@ int WinMain() {
 	auto sand_texture = make_shared<image_texture>("textures/sand.png");
 
 	auto crappy_roughness = make_shared<greyscale>("textures/crappy_roughness.png");
+	auto redstone_emission = make_shared<greyscale>("textures/redstone_emission.png");
 
 	auto cyan_light = make_shared<diffuse_light>(cyan);
 	auto crappy_light = make_shared<diffuse_light>(crappy_bricks);
 	auto some_surface = make_shared<lambertian>(some_texture);
 	auto some_surface_light = make_shared<diffuse_light>(some_texture);
 	auto sand = make_shared<lambertian>(sand_texture);
-	auto redstone_lamp = make_shared<diffuse_light>(make_shared<image_texture>("textures/redstone_lamp.png"), make_shared<greyscale>("textures/redstone_emission.png"));
+	auto redstone_lamp = make_shared<diffuse_light>(make_shared<image_texture>("textures/redstone_lamp.png"), redstone_emission);
 
 		//CAUTION: Adding hittables currently increases render time by a lot! (remove when bounding boxes are implemented)
 	//		boxes:				point3 start, point3 end, material
@@ -112,7 +111,7 @@ int WinMain() {
 	//world.add(make_shared<triangle>(point3(1, 0, -4), point3(2, 0, -6), point3(3, 3, -7), material_center));
 
 	world.add(make_shared<quad>(point3(0, 0, 555), vec3(0, 555, 0), vec3(555,0,0), cyan_light));
-	world.add(make_shared<quad>(point3(0, 0, 555), vec3(0, 555, 0), vec3(0, 0, -555), make_shared<metal>(crappy_bricks, crappy_roughness)));
+	world.add(make_shared<quad>(point3(0, 0, 555), vec3(0, 555, 0), vec3(0, 0, -555), make_shared<metal>(crappy_bricks, redstone_emission)));
 	world.add(make_shared<quad>(point3(0, 0, 555), vec3(555, 0, 0), vec3(0, 0, -555), red));
 	world.add(make_shared<quad>(point3(0, 555, 555), vec3(555, 0, 0), vec3(0, 0, -555), green));
 	world.add(make_shared<quad>(point3(555, 0, 555), vec3(0, 555, 0), vec3(0, 0, -555), blue));
@@ -147,11 +146,13 @@ color rayColor(const ray& r, const color& background, const hittable& world, int
 
 	ray scattered;
 	color attenuation;
-	color emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
+	color emitted;
 
-	if (!rec.mat_ptr->scatter(r, rec, attenuation, scattered))
+	if(rec.mat_ptr->emitted(r, rec, attenuation, scattered, emitted))
 		//hit a light source
 		return emitted;
+
+	rec.mat_ptr->scatter(r, rec, attenuation, scattered);
 
 	//hit a non light source object
 	return emitted + attenuation * rayColor(scattered, background, world, bounces - 1);
