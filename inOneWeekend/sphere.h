@@ -9,8 +9,8 @@ public:
 	sphere() {}
 	sphere(point3 cen, float r, shared_ptr<material> m) : center(cen), radius(r), mat_ptr(m) {};
 
-	virtual bool hit(
-		const ray& r, float t_min, float t_max, hit_record& rec) const override;
+	virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const override;
+    virtual bool bounding_box(float time0, float time1, aabb& output_box) const override;
 
 public:
 	point3 center;
@@ -53,6 +53,13 @@ bool sphere::hit(const ray& r, float t_min, float t_max, hit_record& rec) const 
     get_sphere_uv(outward_normal, rec.u, rec.v);
     rec.mat_ptr = mat_ptr;
 
+    return true;
+}
+
+bool sphere::bounding_box(float time0, float time1, aabb& output_box) const {
+    output_box = aabb(
+        center - vec3(radius, radius, radius),
+        center + vec3(radius, radius, radius));
     return true;
 }
 

@@ -17,8 +17,8 @@ public:
 		w = n / dot(n, n);
 	}
 
-	virtual bool hit(
-		const ray& r, float t_min, float t_max, hit_record& rec) const override;
+	virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const override;
+	virtual bool bounding_box(float time0, float time1, aabb& output_box) const override;
 
 public:
 	point3 q;
@@ -53,6 +53,11 @@ bool quad::hit(const ray& r, float t_min, float t_max, hit_record& rec) const {
 	return true;
 }
 
+bool quad::bounding_box(float time0, float time1, aabb& output_box) const {
+	output_box = aabb(q, q + u + v);
+	return true;
+}
+
 class box : public hittable {
 public:
 	box() {}
@@ -60,6 +65,7 @@ public:
 	box(const point3& origin, const vec3& a, const vec3& b, const vec3& height, shared_ptr<material> mat);
 
 	virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const override;
+	virtual bool bounding_box(float time0, float time1, aabb& output_box) const override;
 
 public:
 	point3 box_min;
@@ -101,6 +107,11 @@ box::box(const point3& origin, const vec3& a, const vec3& b, const vec3& height,
 
 bool box::hit(const ray& r, float t_min, float t_max, hit_record& rec) const {
 	return sides.hit(r, t_min, t_max, rec);
+}
+
+bool box::bounding_box(float time0, float time1, aabb& output_box) const {
+	output_box = aabb(box_min, box_max);
+	return true;
 }
 
 

@@ -12,8 +12,7 @@
 #include "quad.h"
 
 //TODO: 
-//		- bounding boxes would be neat as im looking to add actual 3D-models and not just primitives relatively soon (scratchapixel has the code for a functional raytracer with a mesh)
-//			- this will probably come in late
+//		- 3d-models, I don't really know what else to add to this statement
 // 
 //		- light sources:
 //			- point light sources which should be pretty straight forward

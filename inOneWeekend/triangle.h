@@ -1,6 +1,7 @@
 #ifndef TRIANGLE_H
 #define TRIANGLE_H
 
+#include "common.h"
 #include "hittable.h"
 #include "vec3.h"
 
@@ -9,8 +10,8 @@ public:
 	triangle() {}
 	triangle(point3 a, point3 b, point3 c, shared_ptr<material> m) : vertex0(a), vertex1(b), vertex2(c), mat_ptr(m) {};
 
-	virtual bool hit(
-			const ray& r, float t_min, float t_max, hit_record& rec) const override;
+	virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const override;
+	virtual bool bounding_box(float time0, float time1, aabb& output_box) const override;
 
 public:
 	point3 vertex0;
@@ -56,6 +57,20 @@ bool triangle::hit(const ray& r, float t_min, float t_max, hit_record& rec) cons
 	rec.v = v;
 	rec.set_face_normal(r, outward_normal);
 	rec.mat_ptr = mat_ptr;
+
+	return true;
+}
+
+bool triangle::bounding_box(float time0, float time1, aabb& output_box) const {
+	float min_x = fmin(vertex0.x(), fmin(vertex1.x(), vertex2.x()));
+	float min_y = fmin(vertex0.y(), fmin(vertex1.y(), vertex2.y()));
+	float min_z = fmin(vertex0.z(), fmin(vertex1.z(), vertex2.z()));
+
+	float max_x = fmax(vertex0.x(), fmax(vertex1.x(), vertex2.x()));
+	float max_y = fmax(vertex0.y(), fmax(vertex1.y(), vertex2.y()));
+	float max_z = fmax(vertex0.z(), fmax(vertex1.z(), vertex2.z()));
+
+	output_box = aabb(point3(min_x, min_y, min_z), point3(max_x, max_y, max_z));
 
 	return true;
 }
